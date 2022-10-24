@@ -42,7 +42,7 @@ def collect_environment():
         }
         return config, None
     except Exception as e:
-        return None, e
+        return None, Exception(f"environment variable {e} is missing.")
 
 
 def verify_filesystem(config: dict):
@@ -60,15 +60,11 @@ def verify_filesystem(config: dict):
             raise ValueError("Local torrent path does not exist in container")
         if not local_path.is_dir():
             raise ValueError("Local torrent path is not a valid path for a directory")
+        # TODO: Check for proper permissions
         return None
-    
+
     except Exception as e:
         return e
-
-
-    # Check permissions (we should have read rights)
-    # TODO PLACEHOLDER
-    return Exception("Error [B1]: Not yet implemented, TODO!")
 
 
 def connect_putio(config: dict):
@@ -80,11 +76,21 @@ def connect_putio(config: dict):
     * client is the putio client configured using the OAuth token
     * err is None on success, or an Exception on failure
     """
+    client = putiopy.Client(config["token"], use_retry=True)
+
     try:
-        client = putiopy.Client(config["token"], use_retry=True)
+        response = client.Account.info()
+    except putiopy.ClientError as client_err:
+        print("Putio client error: ", client_err.message)
+        return None, client_err
+
+    if response["status"] == "OK":
+        print(f"PutIO Client: Authenticated as {response['info']['username']}")
         return client, None
-    except Exception as e:
-        return None, e
+
+    else:
+        response_err = Exception(f"putio response error: {response}")
+        return None, response_err
 
 
 def configure_observer(config: dict, putio_client):

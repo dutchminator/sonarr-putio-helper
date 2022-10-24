@@ -81,7 +81,7 @@ def connect_putio(config: dict):
     try:
         response = client.Account.info()
     except putiopy.ClientError as client_err:
-        print("Putio client error: ", client_err.message)
+        print("PutIO client error: ", client_err.message)
         return None, client_err
 
     if response["status"] == "OK":
@@ -89,7 +89,7 @@ def connect_putio(config: dict):
         return client, None
 
     else:
-        response_err = Exception(f"putio response error: {response}")
+        response_err = Exception(f"PutIO response error: {response}")
         return None, response_err
 
 

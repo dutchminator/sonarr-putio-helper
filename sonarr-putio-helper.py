@@ -16,9 +16,12 @@ We will require 4 env variables:
 import time
 import os
 from pathlib import Path
-import putiopy
 
-# Magic constant, should be configurable by user
+import putiopy
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
+
+# Magic constant, check every second unless defined otherwise
 TORRENT_POLL_DELAY = 1
 
 

@@ -41,7 +41,6 @@ def collect_environment() -> tuple[dict | None, Exception | None]:
         poll_delay: Time in seconds between torrent directory polls
     * err is None on success, or an Exception on failure
     """
-    # TODO Placeholder, implement me!
     try:
         config = {
             "token": os.environ["PUTIO_OAUTH_TOKEN"],
@@ -102,8 +101,79 @@ def connect_putio(config: dict) -> tuple[putiopy.Client | None, Exception | None
         return None, response_err
 
 
-def configure_torrent_observer(
+def get_or_create_putio_folder(
     config: dict, putio_client: putiopy.Client
+) -> tuple[int | None, Exception | None]:
+    """
+    Folders on Putio are identified via integer (so-called parent_id). Unfortunately there is no notion of paths in Putio.
+    Instead, a folder has an id and a parent_id identifying its parent. (root id=0).
+
+    Using Putio API /files/list we recursively retrieve the parent_id for a given folder name in the provided path,
+    or we create the folder if it does not yet exist using Putio API /files/create-folder.
+
+    Params:
+        * config : dict, containing our configuration options
+        * putio_client : A properly configured Putio client
+
+    returns:
+        A Tuple consisting of
+        * int : On success, the integer identifier (=parent_id) for the putio remote folder. On failure, None.
+        * Exception : On failure, an Exception object. On success, None.
+    """
+    # Traverse putio's folder hierarchy to get the relevant parent_id
+    putio_path = config["putio_path"]
+    putio_folders = putio_path.split("/")
+    parent_id = 0  # Start at root of Putio files structure
+    created_parent = False  # once we create a parent folder, we skip the File.List calls as they will always be empty.
+
+    for folder in putio_folders:
+        # skip empty-string, e.g. for trailing slash or double slash in path
+        if folder == "":
+            continue
+
+        # If the current parent_id has not been created by us
+        if not created_parent:
+            # List every folder at current parent_id
+            putio_folder_list = putio_client.File.list(
+                parent_id=parent_id, file_type="FOLDER"
+            )
+            print(putio_folder_list)
+
+            # Search for the current "folder" name
+            matching_folder = [f for f in putio_folder_list if f.name == folder]
+        else:
+            # output of client.File.list() on created parents will always be an empty list
+            matching_folder = []
+
+        # If it exists (list length >= 1), cool, collect its id as parent_id and move to next folder
+        if matching_folder:
+            parent_id = matching_folder[0].id
+        else:
+            # If it does not yet exist, create it in current parent_id
+            try:
+                new_putio_folder_obj = putio_client.File.create_folder(
+                    folder, parent_id=parent_id
+                )
+                print(
+                    f"Created new Putio folder [{folder}] in parent_id [{parent_id}]."
+                )
+            except Exception as e:
+                # We don't expect an issue creating the folder as it didn't exist, but who knows....
+                return None, e
+
+            # output of putio_client.File.create_folder() is a putiopy.File object
+            parent_id = new_putio_folder_obj.id
+            created_parent = True
+
+    # End of for-loop, parent_id should now be the id of the target folder on Putio!
+    print(f"Target folder [{putio_path}] on Putio has parent_id {parent_id}")
+
+    # return parent_id value for target putio folder
+    return parent_id, None
+
+
+def configure_torrent_observer(
+    config: dict, target_parent_id: int, putio_client: putiopy.Client
 ) -> tuple[Observer | None, Exception | None]:
     """
     Configures the watchdog observer and event handler actions, and returns the observer.
@@ -124,9 +194,24 @@ def configure_torrent_observer(
 
     # ON: file creation
     def on_torrent_created(event):
-        "What to do on file creation event"
+        """
+        What to do on file creation event
+        """
         print(f"Observed creation event: {event}")
 
+        # Get the file from the event
+        new_torrent = event.src_path
+        try:
+            putio_transfer = putio_client.Transfer.add_torrent(
+                path=new_torrent,
+                parent_id=target_parent_id,
+            )
+        except Exception as e:
+            raise e
+
+        print(f"PutIO transfer response: {putio_transfer}")
+
+    # Assign on_created function to event handler
     torrent_event_handler.on_created = on_torrent_created
 
     # Define the observer object
@@ -158,7 +243,9 @@ if __name__ == "__main__":
         raise putio_err
 
     # 4. Verify existence of remote directory
-    # TODO
+    putio_parent_id, putio_folder_err = get_or_create_putio_folder(config, putio_client)
+    if putio_folder_err:
+        raise putio_folder_err
 
     # 5. Configure the torrent observer
     torrent_observer, obs_err = configure_torrent_observer(config, putio_client)

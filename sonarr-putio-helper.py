@@ -19,7 +19,7 @@ from pathlib import Path
 import putiopy
 
 # Magic constant, should be configurable by user
-WATCHFOLDER_POLL_DELAY = 1
+TORRENT_POLL_DELAY = 1
 
 
 def collect_environment():
@@ -39,6 +39,7 @@ def collect_environment():
             "token": os.environ["PUTIO_OAUTH_TOKEN"],
             "watchfolder": os.environ["TORRENT_PATH"],
             "putio_path": os.environ["PUTIO_PATH"],
+            "poll_delay": os.getenv("TORRENT_POLL_DELAY", TORRENT_POLL_DELAY),
         }
         return config, None
     except Exception as e:

@@ -139,7 +139,7 @@ if __name__ == "__main__":
     torrent_observer.start()
     try:
         while True:
-            time.sleep(WATCHFOLDER_POLL_DELAY)
+            time.sleep(config["poll_delay"])
     except KeyboardInterrupt:
         torrent_observer.stop()
         torrent_observer.join()

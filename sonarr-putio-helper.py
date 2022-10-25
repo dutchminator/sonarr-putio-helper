@@ -165,6 +165,8 @@ if __name__ == "__main__":
     if obs_err:
         raise obs_err
 
+    # FUTURE: Configure observers for archival/removal functions
+
     # 6. Initialize observer loop
     print(f"Starting observer loop with delay {config['poll_delay']}")
     torrent_observer.start()
@@ -175,7 +177,3 @@ if __name__ == "__main__":
         torrent_observer.stop()
         torrent_observer.join()
         print("Sonarr PutIO Helper: Stopped by user.")
-
-    # 6. FUTURE: Initialize archiver loop for watchfolder files
-
-    # 7. FUTURE: Initialize archiver loop for putio files

@@ -207,13 +207,21 @@ def configure_torrent_observer(
                 path=new_torrent,
                 parent_id=target_parent_id,
             )
+            print(
+                f"Started Putio transfer for [name={putio_transfer.name}] [id={putio_transfer.id}]"
+            )
+            # print(f"PutIO transfer response: {putio_transfer}")
+        except putiopy.ClientError as e:
+            # Print any putio.py client errors but dont halt execution
+            print(e)
         except Exception as e:
+            # For other exceptions we should raise and exit
             raise e
-
-        print(f"PutIO transfer response: {putio_transfer}")
+            exit
 
     # Assign on_created function to event handler
     torrent_event_handler.on_created = on_torrent_created
+    # TODO: Do we need other events? This will ignore drag-drop events, as they are Move events.
 
     # Define the observer object
     obs_path = config["torrent_path"]
@@ -249,7 +257,9 @@ if __name__ == "__main__":
         raise putio_folder_err
 
     # 5. Configure the torrent observer
-    torrent_observer, obs_err = configure_torrent_observer(config, putio_parent_id, putio_client)
+    torrent_observer, obs_err = configure_torrent_observer(
+        config, putio_parent_id, putio_client
+    )
     if obs_err:
         raise obs_err
 

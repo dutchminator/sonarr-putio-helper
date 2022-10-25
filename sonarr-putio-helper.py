@@ -76,9 +76,9 @@ def connect_putio(config: dict):
     * client is the putio client configured using the OAuth token
     * err is None on success, or an Exception on failure
     """
-    client = putiopy.Client(config["token"], use_retry=True)
 
     try:
+        client = putiopy.Client(config["token"], use_retry=True)
         response = client.Account.info()
     except putiopy.ClientError as client_err:
         print("PutIO client error: ", client_err.message)
@@ -93,7 +93,7 @@ def connect_putio(config: dict):
         return None, response_err
 
 
-def configure_observer(config: dict, putio_client):
+def configure_observer(config: dict, putio_client: putiopy.Client):
     """
     Configures the watchdog observer and event handler actions, and returns the observer.
 

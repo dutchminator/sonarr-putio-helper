@@ -105,7 +105,8 @@ def get_or_create_putio_folder(
     config: dict, putio_client: putiopy.Client
 ) -> tuple[int | None, Exception | None]:
     """
-    Folders on Putio are identified via integer (so-called parent_id). Unfortunately there is no notion of paths in Putio.
+    Folders on Putio are identified via integer (so-called parent_id).
+    Unfortunately there is no notion of paths in Putio.
     Instead, a folder has an id and a parent_id identifying its parent. (root id=0).
 
     Using Putio API /files/list we recursively retrieve the parent_id for a given folder name in the provided path,

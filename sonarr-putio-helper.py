@@ -243,13 +243,13 @@ if __name__ == "__main__":
     if putio_err:
         raise putio_err
 
-    # 4. Verify existence of remote directory
+    # 4. Verify existence of remote directory and/or create it to get the parent_id
     putio_parent_id, putio_folder_err = get_or_create_putio_folder(config, putio_client)
     if putio_folder_err:
         raise putio_folder_err
 
     # 5. Configure the torrent observer
-    torrent_observer, obs_err = configure_torrent_observer(config, putio_client)
+    torrent_observer, obs_err = configure_torrent_observer(config, putio_parent_id, putio_client)
     if obs_err:
         raise obs_err
 

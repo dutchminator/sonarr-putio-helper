@@ -25,31 +25,36 @@ from watchdog.events import PatternMatchingEventHandler
 TORRENT_POLL_DELAY = 1
 
 
-def collect_environment():
+def collect_environment() -> tuple[dict | None, Exception | None]:
     """
     Checks whether following env vars are present:
     * PUTIO_OAUTH_TOKEN : Authentication token for putio
     * TORRENT_PATH : Path to watch for file changes
     * PUTIO_PATH : Putio path to store files in for completed transfers
+    * TORRENT_POLL_DELAY : optional, time in seconds between polls for file changes. default=1.
 
     Returns tuple (config, err):
-    * config is a dict containing the token and paths
+    * config is a dict containing the configuration parameters.
+        token: OAuth token
+        torrent_path: Path to torrent directory to watch
+        putio_path: Path to putio directory
+        poll_delay: Time in seconds between torrent directory polls
     * err is None on success, or an Exception on failure
     """
     # TODO Placeholder, implement me!
     try:
         config = {
             "token": os.environ["PUTIO_OAUTH_TOKEN"],
-            "watchfolder": os.environ["TORRENT_PATH"],
+            "torrent_path": os.environ["TORRENT_PATH"],
             "putio_path": os.environ["PUTIO_PATH"],
-            "poll_delay": os.getenv("TORRENT_POLL_DELAY", TORRENT_POLL_DELAY),
+            "poll_delay": int(os.getenv("TORRENT_POLL_DELAY", TORRENT_POLL_DELAY)),
         }
         return config, None
     except Exception as e:
         return None, Exception(f"environment variable {e} is missing.")
 
 
-def verify_filesystem(config: dict):
+def verify_filesystem(config: dict) -> None | ValueError:
     """
     Check whether the provided paths are valid, exist, and we have permission to read.
     This check verifies that volume mounts are properly set up.
@@ -58,7 +63,7 @@ def verify_filesystem(config: dict):
     """
     # Check existence of torrent folder in local fs
     try:
-        local_path = Path(config["watchfolder"])
+        local_path = Path(config["torrent_path"])
         # Check 1. It is indeed a path
         if not local_path.exists():
             raise ValueError("Local torrent path does not exist in container")
@@ -71,7 +76,7 @@ def verify_filesystem(config: dict):
         return e
 
 
-def connect_putio(config: dict):
+def connect_putio(config: dict) -> tuple[putiopy.Client | None, Exception | None]:
     """
     Uses the provided putio OAuth token to setup the putio client for use.
     Register an application on your putio account to get your own OAuth token.
@@ -97,7 +102,9 @@ def connect_putio(config: dict):
         return None, response_err
 
 
-def configure_observer(config: dict, putio_client: putiopy.Client):
+def configure_torrent_observer(
+    config: dict, putio_client: putiopy.Client
+) -> tuple[Observer | None, Exception | None]:
     """
     Configures the watchdog observer and event handler actions, and returns the observer.
 
@@ -105,12 +112,35 @@ def configure_observer(config: dict, putio_client: putiopy.Client):
     * observer is the watchdog observer with defined event handler actions
     * err is None on success, or an Exception on failure
     """
-    # TODO Placeholder
-    return None, Exception("Error [C1]: Not yet implemented, TODO!")
+    # Define the event handler object
+    torrent_patterns = ["*.magnet", "*.torrent"]  # torrent or magnet files
+
+    torrent_event_handler = PatternMatchingEventHandler(
+        patterns=torrent_patterns,
+        ignore_patterns=None,
+        ignore_directories=True,
+        case_sensitive=True,
+    )
+
+    # ON: file creation
+    def on_torrent_created(event):
+        "What to do on file creation event"
+        print(f"Observed creation event: {event}")
+
+    torrent_event_handler.on_created = on_torrent_created
+
+    # Define the observer object
+    obs_path = config["torrent_path"]
+    torrent_observer = Observer()
+    torrent_observer.schedule(
+        event_handler=torrent_event_handler, path=obs_path, recursive=False
+    )
+
+    return torrent_observer, None
 
 
 if __name__ == "__main__":
-    print("Hello world! :)")
+    print("Sonarr PutIO Helper: initiating")
 
     # 1. Check for required environment variables
     config, env_err = collect_environment()
@@ -131,11 +161,12 @@ if __name__ == "__main__":
     # TODO
 
     # 5. Configure the torrent observer
-    torrent_observer, obs_err = configure_observer(config, putio_client)
+    torrent_observer, obs_err = configure_torrent_observer(config, putio_client)
     if obs_err:
         raise obs_err
 
     # 6. Initialize observer loop
+    print(f"Starting observer loop with delay {config['poll_delay']}")
     torrent_observer.start()
     try:
         while True:
@@ -143,6 +174,7 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         torrent_observer.stop()
         torrent_observer.join()
+        print("Sonarr PutIO Helper: Stopped by user.")
 
     # 6. FUTURE: Initialize archiver loop for watchfolder files
 

@@ -11,6 +11,9 @@ Scans a local folder for new torrent/magnet files, and starts a transfer on Puti
 - PUID: ID for the user with permissions to torrent folder
 - PGID: ID for the group the user belongs to with permissions to the torrent folder
 
+### Building the image
+Simple. `docker build -t putio-helper .` in the /src folder.
+
 ### Example docker run statement
 ```bash
 docker run -it \
@@ -21,7 +24,7 @@ docker run -it \
 -e PGID=65541 \
 -e PUID=1029 \
 -v Path/To/torrent_blackhole_test:/torrent_blackhole \
-putio-helper:0.3
+putio-helper
 ```
 
 ### Example Docker Compose YAML

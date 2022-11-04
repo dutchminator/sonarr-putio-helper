@@ -53,13 +53,13 @@ services:
 
 ## Development
 ### Development TODOs
-[x] Implement PUID/PGID support for Synology usage (and generally, we shouldn't run containers as root :P)
-[x] Implement as Docker container instead of standalone script
-[x] Implement deployment to ghcr.io image registry
-[] Implement CI/CD deployment to an image registry
-[] Implement logging to its own docker folder?
-[] Implement cleanup of torrent_blackhole
-[] Implement cleanup of Putio folder
+* [x] Implement PUID/PGID support for Synology usage (and generally, we shouldn't run containers as root :P)
+* [x] Implement as Docker container instead of standalone script
+* [x] Implement deployment to ghcr.io image registry
+* [] Implement CI/CD deployment to an image registry
+* [] Implement logging to its own docker folder?
+* [] Implement cleanup of torrent_blackhole
+* [] Implement cleanup of Putio folder
 
 ### How to contribute
 TODO

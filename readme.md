@@ -28,12 +28,34 @@ putio-helper
 ```
 
 ### Example Docker Compose YAML
-TODO
+```yaml
+version: '3'
+
+services:
+#---------------------------------------------------------------------#
+#                Sonarr PutIO Helper -  Send torrents to PutIO        #
+#---------------------------------------------------------------------#
+  sonarr-putio-helper:
+    container_name: sonarr-putio-helper
+    image: ghcr.io/dutchminator/putio-helper:latest
+    restart: always
+    volumes:
+      - /path/to/torrent_blackhole:/torrent_blackhole  # or your own mount path
+    environment:
+      - PUID=  # user id
+      - PGID=  # usergroup id
+      - TZ=Europe/Amsterdam  # or your own timezone
+      - TORRENT_PATH=/torrent_blackhole  # path to mounted torrent blackhole
+      - PUTIO_PATH=  # putio path to store transfers
+      - TORRENT_POLL_DELAY=1  # poll wait time in seconds
+      - PUTIO_OAUTH_TOKEN=  # your OAuth token for putio
+```
 
 ## Development
 ### Development TODOs
 [x] Implement PUID/PGID support for Synology usage (and generally, we shouldn't run containers as root :P)
 [x] Implement as Docker container instead of standalone script
+[x] Implement deployment to ghcr.io image registry
 [] Implement CI/CD deployment to an image registry
 [] Implement logging to its own docker folder?
 [] Implement cleanup of torrent_blackhole

@@ -138,7 +138,6 @@ def get_or_create_putio_folder(
             putio_folder_list = putio_client.File.list(
                 parent_id=parent_id, file_type="FOLDER"
             )
-            print(putio_folder_list)
 
             # Search for the current "folder" name
             matching_folder = [f for f in putio_folder_list if f.name == folder]

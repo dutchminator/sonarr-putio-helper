@@ -1,5 +1,6 @@
 FROM python:3.10.7-alpine
 LABEL Maintainer="Sebastiaan Candel <mail@sebastiaancandel.nl>"
+LABEL org.opencontainers.image.source=https://github.com/dutchminator/sonarr-putio-helper
 
 # Install requirements
 COPY requirements.txt /app/src/requirements.txt
